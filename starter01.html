@@ -1,0 +1,76 @@
+<html>
+<SCRIPT>
+    var pos = 0;
+    const pacArray = [
+        ['PacMan1.png', 'PacMan2.png'],
+        ['PacMan3.png', 'PacMan4.png']
+    ];
+    var direction = 0;
+    var focus = 0;
+    // This is a new addition to the original code. Defining speed as a variable allows it to be more easily changed in one place,
+    // and allows flexibility to remove the if statement for calculating pos via direction inside the Run function in a later refactor.
+    var speed = 20; 
+
+    function Run() {
+        // Several components of Run have been moved further into the execution, to allow checkPageBounds to execute before selecting the image from pacArray and adjusting the style
+        // element. This fixes graphical issues with the animation frame on which edge detection is triggered, caused by my "bouncing" in checkPageBounds.
+        let img = document.getElementById("PacMan");
+        let imgWidth = img.width
+        // TODO: Refactor to remove this if statement. Speed can be multiplied by (-1) each time direction is changed, which will allow for a single line of code each in Run and
+        // checkPageBounds instead of using this if statement with redundant code.
+        if (direction) {
+            pos -= speed;
+        } else {
+            pos += speed;
+        }
+        direction = checkPageBounds(direction, imgWidth);
+        focus = (focus + 1) % 2;
+        img.src = pacArray[direction][focus];
+        img.style.left = pos + "px";
+        setTimeout(Run, 200);
+    }
+
+    function checkPageBounds(direction, imgWidth) {
+        // Checks if the pos of the image has passed outside the boundaries of the browser window, and reverses direction if it has. The image is also "bounced" back into the
+        // bounding box, with its new location being a number of pixels inside the boundary equal to the number of pixels it was previously outside the boundary. For negative
+        // numbers, just multiplying by (-1) is sufficient. For positive numbers, the difference between pos and (window.innerWidth - imgWidth) has to be calculated, due to the
+        // image's coordinates being left-aligned.
+
+        // These if statements are ugly, but this is the best way I currently know of to check multiple conditionals in this way.
+        
+        // Detects if either boundary has been passed and uses the same remainder-based true/false toggling math as focus does in the Run function
+        if (pos < 0 || pos > (window.innerWidth - imgWidth)){
+            direction = (direction + 1) % 2;
+        }
+        // Change negative to positive if the pos has moved past the left boundary
+        if (pos < 0){
+            pos = pos * (-1);
+        }
+        // I am not an expert mathematician, but this does what I need it to to. If the right side of the image is 100 pixels past the right bounding box, it will end up being 100
+        // pixels to the left after this if statement. else if used specifically to stop both from executing in the same iteration of checkPageBounds.
+        else if (pos > (window.innerWidth - imgWidth)){
+            pos = (window.innerWidth - imgWidth) - (pos + imgWidth - window.innerWidth);
+        }
+        // Debugging output for PacMan finding himself still out of bounds even after adjustment. This should never happen unless the window is resized, or speed is set higher than
+        // the window width minus image width. As long as speed is low enough, the image will eventually get itself back in bounds.
+        if (pos < 0 || (pos + imgWidth) > window.innerWidth){
+            console.log('An unexpected out of bounds has occurred; was the window resized? PacMan is probably quantum fluctuating between boundaries right now');
+            console.log('Current Position: ' + pos);
+            if(direction){
+                console.log('Direction: left');
+            }
+            else{
+                console.log('Direction: right');
+            }
+        }
+        return direction;
+    }
+
+</SCRIPT>
+
+<!-- Movement code begins execution upon a mouse click being detected on the image, or in other words, "click PacMan to start" -->
+<body>
+    <img id="PacMan" src="PacMan1.png" width='200' onclick="Run()" style="position:absolute"> </img>
+</body>
+
+</html>
